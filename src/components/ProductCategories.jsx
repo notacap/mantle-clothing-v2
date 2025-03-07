@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import ButtonWithHover from './ButtonWithHover';
+import Link from 'next/link';
 
 export default function ProductCategories() {
   // Hover state for each category
@@ -25,146 +26,87 @@ export default function ProductCategories() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
   
-  // Category data
-  const categories = [
+  const collections = [
     {
-      id: 'rain',
-      name: 'The Rain Collection',
-      image: '/images/home-1.jpg',
-      link: '/shop/rain-collection'
+      title: 'Rain Collection',
+      description: 'Waterproof, sustainable outerwear for all weather conditions.',
+      image: '/images/DSCF4744-scaled-e1608145214695.jpg',
+      tag: 'rain-collection'
     },
     {
-      id: 'range',
-      name: 'The Range Collection',
-      image: '/images/home-4.jpg',
-      link: '/shop/range-collection'
+      title: 'The Range Collection',
+      description: 'Versatile, eco-friendly apparel for everyday adventures.',
+      image: '/images/DSCF4564-scaled.jpg',
+      tag: 'range-collection'
     },
     {
-      id: 'accessories',
-      name: 'Accessories',
-      image: '/images/home-2.jpg',
-      link: '/shop/accessories'
-    },
-    {
-      id: 'all',
-      name: 'Shop All',
-      image: '/images/home-3.jpg',
-      link: '/shop'
+      title: 'Accessories',
+      description: 'Sustainable accessories to complete your look.',
+      image: '/images/DSCF6361-scaled.jpg',
+      tag: 'accessories'
     }
   ];
 
   return (
-    <section style={{ 
-      padding: '4rem 1rem', 
-      boxSizing: 'border-box',
-      width: '100%',
-      overflow: 'hidden'
-    }}>
-      <h2 style={{ 
-        fontSize: '1.875rem', 
-        fontWeight: 'bold', 
-        textAlign: 'center', 
-        marginBottom: '2.5rem' 
-      }}>
-        Explore Our Collections
-      </h2>
-      
-      {isMobile ? (
-        // Mobile layout - stacked cards with fixed height
+    <section style={{ backgroundColor: 'white', padding: '4rem 1rem' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '2.5rem' }}>
+          Explore Our Collections
+        </h2>
+        
         <div style={{ 
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1.5rem',
-          width: '100%',
-          margin: '0 auto',
-          boxSizing: 'border-box'
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: '2rem',
+          marginBottom: '3rem'
         }}>
-          {categories.map((category) => (
-            <div key={category.id} style={{ height: '250px', width: '100%', boxSizing: 'border-box' }}>
-              <CategoryCard 
-                category={category}
-                isHovered={hoveredCategory === category.id}
-                onMouseEnter={() => setHoveredCategory(category.id)}
-                onMouseLeave={() => setHoveredCategory(null)}
-                height="100%"
-                alwaysShowButton={true}
-              />
+          {collections.map((collection, index) => (
+            <div key={index} style={{ textAlign: 'center' }}>
+              <Link href={`/collections/${collection.tag}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <div style={{ 
+                  position: 'relative',
+                  height: '300px',
+                  borderRadius: '0.5rem',
+                  overflow: 'hidden',
+                  marginBottom: '1.5rem',
+                  backgroundColor: '#f3f4f6'
+                }}>
+                  <img
+                    src={collection.image}
+                    alt={collection.title}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      transition: 'transform 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+                    onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                  />
+                </div>
+              </Link>
+              
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '500', marginBottom: '0.75rem' }}>
+                {collection.title}
+              </h3>
+              
+              <p style={{ color: '#4b5563', marginBottom: '1.5rem' }}>
+                {collection.description}
+              </p>
+              
+              <ButtonWithHover href={`/collections/${collection.tag}`}>
+                Shop {collection.title}
+              </ButtonWithHover>
             </div>
           ))}
         </div>
-      ) : (
-        // Desktop layout - creative grid without overlapping
-        <div style={{ 
-          maxWidth: '1200px',
-          margin: '0 auto',
-          boxSizing: 'border-box',
-          width: '100%'
-        }}>
-          {/* Top row - two large cards side by side */}
-          <div style={{ 
-            display: 'flex', 
-            gap: '1.5rem',
-            marginBottom: '1.5rem',
-            height: '400px',
-            boxSizing: 'border-box',
-            width: '100%'
-          }}>
-            <div style={{ flex: '1 1 50%', boxSizing: 'border-box' }}>
-              <CategoryCard 
-                key={categories[0].id}
-                category={categories[0]}
-                isHovered={hoveredCategory === categories[0].id}
-                onMouseEnter={() => setHoveredCategory(categories[0].id)}
-                onMouseLeave={() => setHoveredCategory(null)}
-                height="100%"
-              />
-            </div>
-            <div style={{ flex: '1 1 50%', boxSizing: 'border-box' }}>
-              <CategoryCard 
-                key={categories[1].id}
-                category={categories[1]}
-                isHovered={hoveredCategory === categories[1].id}
-                onMouseEnter={() => setHoveredCategory(categories[1].id)}
-                onMouseLeave={() => setHoveredCategory(null)}
-                height="100%"
-              />
-            </div>
-          </div>
-          
-          {/* Bottom row - creative asymmetric layout */}
-          <div style={{ 
-            display: 'flex', 
-            gap: '1.5rem',
-            height: '300px',
-            boxSizing: 'border-box',
-            width: '100%'
-          }}>
-            {/* Left card - slightly wider */}
-            <div style={{ flex: '1.2 1 0%', boxSizing: 'border-box' }}>
-              <CategoryCard 
-                key={categories[2].id}
-                category={categories[2]}
-                isHovered={hoveredCategory === categories[2].id}
-                onMouseEnter={() => setHoveredCategory(categories[2].id)}
-                onMouseLeave={() => setHoveredCategory(null)}
-                height="100%"
-              />
-            </div>
-            
-            {/* Right card - slightly narrower */}
-            <div style={{ flex: '0.8 1 0%', boxSizing: 'border-box' }}>
-              <CategoryCard 
-                key={categories[3].id}
-                category={categories[3]}
-                isHovered={hoveredCategory === categories[3].id}
-                onMouseEnter={() => setHoveredCategory(categories[3].id)}
-                onMouseLeave={() => setHoveredCategory(null)}
-                height="100%"
-              />
-            </div>
-          </div>
+        
+        <div style={{ textAlign: 'center' }}>
+          <ButtonWithHover href="/shop" variant="outline">
+            Shop All Products
+          </ButtonWithHover>
         </div>
-      )}
+      </div>
     </section>
   );
 }

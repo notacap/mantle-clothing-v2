@@ -183,4 +183,33 @@ export function getProductSecondaryImageUrl(product) {
   
   // If there's only one image or second image is invalid, use a different fallback
   return randomFallback;
+}
+
+/**
+ * Fetch products by tag from the internal API
+ * @param {string} tag - Tag slug to fetch products for
+ * @param {number} limit - Number of products to fetch
+ * @returns {Promise<Array>} - Array of product objects
+ */
+export async function getProductsByTag(tag, limit = 8) {
+  try {
+    // Use our internal API route
+    const url = new URL('/api/products/tag', window.location.origin);
+    
+    // Add query parameters
+    url.searchParams.append('tag', tag);
+    url.searchParams.append('limit', limit.toString());
+    
+    const response = await fetch(url.toString());
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch products by tag: ${response.status}`);
+    }
+    
+    const products = await response.json();
+    return products;
+  } catch (error) {
+    console.error('Error fetching products by tag:', error);
+    return [];
+  }
 } 
