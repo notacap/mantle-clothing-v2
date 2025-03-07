@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { getFeaturedProducts, formatPrice, getProductImageUrl } from '@/services/woocommerce';
+import { getFeaturedProducts, formatPrice, getProductImageUrl, getProductSecondaryImageUrl } from '@/services/woocommerce';
 
 export default function FeaturedProducts() {
   const scrollContainerRef = useRef(null);
@@ -15,6 +15,7 @@ export default function FeaturedProducts() {
   const [error, setError] = useState(null);
   const [isFeatured, setIsFeatured] = useState(true);
   const [imageErrors, setImageErrors] = useState({});
+  const [hoveredProduct, setHoveredProduct] = useState(null);
 
   // Fetch products from the API
   useEffect(() => {
@@ -24,6 +25,14 @@ export default function FeaturedProducts() {
         
         // Get products from the API
         const result = await getFeaturedProducts(8);
+        
+        // Log products for debugging
+        console.log('Loaded products:', result.products?.map(p => ({
+          id: p.id,
+          name: p.name,
+          imageCount: p?.images?.length,
+          images: p.images
+        })));
         
         // Set products and featured flag
         setProducts(result.products || []);
@@ -141,10 +150,13 @@ export default function FeaturedProducts() {
   };
 
   // Handle image error
-  const handleImageError = (productId) => {
+  const handleImageError = (productId, isSecondary = false) => {
     setImageErrors(prev => ({
       ...prev,
-      [productId]: true
+      [productId]: {
+        ...prev[productId],
+        [isSecondary ? 'secondary' : 'primary']: true
+      }
     }));
   };
 
@@ -266,23 +278,34 @@ export default function FeaturedProducts() {
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-5px)';
                     e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                    setHoveredProduct(product.id);
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
                     e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+                    setHoveredProduct(null);
                   }}
                   >
-                    <div style={{ height: '300px', position: 'relative', backgroundColor: '#f3f4f6' }}>
+                    <div style={{ height: '300px', position: 'relative', backgroundColor: '#f3f4f6', overflow: 'hidden' }}>
                       <Image
-                        src={imageErrors[product.id] 
-                          ? getFallbackImage(index)
-                          : getProductImageUrl(product)}
+                        src={hoveredProduct === product.id
+                          ? (imageErrors[product.id]?.secondary 
+                              ? getFallbackImage((index + 1) % 4)
+                              : getProductSecondaryImageUrl(product))
+                          : (imageErrors[product.id]?.primary 
+                              ? getFallbackImage(index)
+                              : getProductImageUrl(product))}
                         alt={product.name}
                         fill
-                        style={{ objectFit: 'cover' }}
+                        style={{ 
+                          objectFit: 'cover',
+                          transition: 'transform 0.3s ease-in-out, opacity 0.3s ease-in-out',
+                          transform: hoveredProduct === product.id ? 'scale(1.1)' : 'scale(1)',
+                          opacity: 1
+                        }}
                         sizes="280px"
-                        onError={() => handleImageError(product.id)}
-                        priority={index < 2} // Prioritize loading the first two images
+                        onError={() => handleImageError(product.id, hoveredProduct === product.id)}
+                        priority={index < 2}
                       />
                     </div>
                     <div style={{ padding: '1.5rem', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>

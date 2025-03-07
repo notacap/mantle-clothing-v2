@@ -148,12 +148,39 @@ export function getProductImageUrl(product) {
     return randomFallback;
   }
   
-  // Check if the image URL is from mantle-clothing.com
   const imageUrl = product.images[0].src;
-  if (imageUrl && imageUrl.includes('mantle-clothing.com')) {
-    return imageUrl;
+  return imageUrl || randomFallback;
+}
+
+/**
+ * Extract the second image URL from a product, or a different image if only one exists
+ * @param {Object} product - Product object
+ * @returns {string} - Image URL
+ */
+export function getProductSecondaryImageUrl(product) {
+  // Local fallback images
+  const fallbackImages = [
+    '/images/DSCF1858.jpg',
+    '/images/DSCF4564-scaled.jpg',
+    '/images/DSCF6361-scaled.jpg',
+    '/images/DSCF4744-scaled-e1608145214695.jpg'
+  ];
+  
+  // Random fallback image (different from the one used in getProductImageUrl)
+  const randomFallback = fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
+  
+  if (!product || !product.images || !product.images.length) {
+    return randomFallback;
   }
   
-  // If the image URL is not from mantle-clothing.com, use a fallback
+  // If there's more than one image, use the second image
+  if (product.images.length > 1) {
+    const imageUrl = product.images[1].src;
+    if (imageUrl) {
+      return imageUrl;
+    }
+  }
+  
+  // If there's only one image or second image is invalid, use a different fallback
   return randomFallback;
 } 

@@ -1,0 +1,10 @@
+---
+description: The application's website searchability (SEO) should be among the top priorities
+globs: 
+alwaysApply: false
+---
+
+# Your rule content
+
+- Ensure the website is compatible with a wide array of screen sizes (mobile, desktop, gaming monitor, etc.)
+- Use best practices for optimizing website load speeds, which includes populating information from the API call
