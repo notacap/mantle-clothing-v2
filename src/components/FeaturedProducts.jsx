@@ -2,12 +2,43 @@
 
 import { useRef, useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { getFeaturedProducts, formatPrice, getProductImageUrl } from '@/services/woocommerce';
 
 export default function FeaturedProducts() {
   const scrollContainerRef = useRef(null);
   const [isScrolling, setIsScrolling] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isFeatured, setIsFeatured] = useState(true);
+  const [imageErrors, setImageErrors] = useState({});
+
+  // Fetch products from the API
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        setIsLoading(true);
+        
+        // Get products from the API
+        const result = await getFeaturedProducts(8);
+        
+        // Set products and featured flag
+        setProducts(result.products || []);
+        setIsFeatured(result.isFeatured);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to load products:', err);
+        setError('Failed to load products. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadProducts();
+  }, []);
 
   // Check if scrolling is possible in either direction
   const checkScrollability = () => {
@@ -35,7 +66,7 @@ export default function FeaturedProducts() {
         window.removeEventListener('resize', checkScrollability);
       };
     }
-  }, []);
+  }, [products]); // Re-run when products change
 
   // Improved scroll functions with item-based scrolling
   const scrollLeft = () => {
@@ -82,6 +113,52 @@ export default function FeaturedProducts() {
     setTimeout(() => setIsScrolling(false), 500);
   };
 
+  // Function to strip HTML tags from description
+  const stripHtml = (html) => {
+    if (typeof window === 'undefined') {
+      // Server-side rendering fallback
+      return html?.replace(/<[^>]*>?/gm, '') || '';
+    }
+    
+    // Client-side rendering
+    const doc = new DOMParser().parseFromString(html || '', 'text/html');
+    return doc.body.textContent || '';
+  };
+
+  // Function to get short description
+  const getShortDescription = (product) => {
+    if (product.short_description) {
+      const text = stripHtml(product.short_description);
+      return text.substring(0, 60) + (text.length > 60 ? '...' : '');
+    }
+    
+    if (product.description) {
+      const text = stripHtml(product.description);
+      return text.substring(0, 60) + (text.length > 60 ? '...' : '');
+    }
+    
+    return 'Sustainable eco-friendly apparel';
+  };
+
+  // Handle image error
+  const handleImageError = (productId) => {
+    setImageErrors(prev => ({
+      ...prev,
+      [productId]: true
+    }));
+  };
+
+  // Get fallback image
+  const getFallbackImage = (index) => {
+    const fallbackImages = [
+      '/images/DSCF1858.jpg',
+      '/images/DSCF4564-scaled.jpg',
+      '/images/DSCF6361-scaled.jpg',
+      '/images/DSCF4744-scaled-e1608145214695.jpg'
+    ];
+    return fallbackImages[index % fallbackImages.length];
+  };
+
   return (
     <section style={{ 
       maxWidth: '1200px', 
@@ -91,149 +168,187 @@ export default function FeaturedProducts() {
       position: 'relative'
     }}>
       <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '2.5rem' }}>
-        Featured Products
+        {isFeatured ? 'Featured Products' : 'Our Products'}
       </h2>
       
-      <div style={{ position: 'relative', padding: '0 40px' }}>
-        {/* Left scroll button */}
-        <button 
-          onClick={scrollLeft}
-          aria-label="Scroll left"
-          disabled={!canScrollLeft}
-          style={{
-            position: 'absolute',
-            left: '-10px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            zIndex: 10,
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            backgroundColor: 'white',
-            border: 'none',
-            boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: canScrollLeft ? 'pointer' : 'default',
-            opacity: canScrollLeft ? 1 : 0.5,
-            transition: 'opacity 0.3s ease, transform 0.3s ease',
-          }}
-          onMouseDown={(e) => canScrollLeft && (e.currentTarget.style.transform = 'translateY(-50%) scale(0.95)')}
-          onMouseUp={(e) => canScrollLeft && (e.currentTarget.style.transform = 'translateY(-50%) scale(1)')}
-          onMouseLeave={(e) => canScrollLeft && (e.currentTarget.style.transform = 'translateY(-50%) scale(1)')}
-        >
-          <span style={{ 
-            borderTop: '2px solid #9CB24D', 
-            borderLeft: '2px solid #9CB24D', 
-            width: '10px', 
-            height: '10px', 
-            transform: 'rotate(-45deg)', 
-            display: 'block', 
-            marginLeft: '5px',
-            opacity: canScrollLeft ? 1 : 0.5
-          }}></span>
-        </button>
-        
-        <div 
-          ref={scrollContainerRef}
-          className="featured-products"
-          style={{ 
-            display: 'flex',
-            overflowX: 'auto',
-            gap: '1.5rem',
-            paddingBottom: '0.75rem',
-            scrollbarWidth: 'thin',
-            scrollbarColor: '#9CB24D #e5e7eb',
-            msOverflowStyle: 'none',
-            WebkitOverflowScrolling: 'touch',
-            scrollSnapType: 'x mandatory',
-            scrollBehavior: 'smooth',
-            width: '100%'
-          }}
-        >
-          {/* Product items */}
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
-            <Link 
-              href={`/shop/product-${item}`} 
-              key={item}
-              style={{ 
-                flex: '0 0 auto',
-                width: '280px',
-                textDecoration: 'none',
-                color: 'inherit',
-                scrollSnapAlign: 'start'
-              }}
-            >
-              <div style={{ 
-                backgroundColor: 'white', 
-                borderRadius: '0.5rem', 
-                overflow: 'hidden', 
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-5px)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-              }}
-              >
-                <div style={{ height: '300px', backgroundColor: '#e5e7eb', position: 'relative' }}>
-                  {/* Product image placeholder */}
-                </div>
-                <div style={{ padding: '1.5rem' }}>
-                  <h3 style={{ fontSize: '1.125rem', fontWeight: '500', marginBottom: '0.5rem' }}>Product {item}</h3>
-                  <p style={{ color: '#4b5563', marginBottom: '1rem' }}>Sustainable eco-friendly apparel</p>
-                  <p style={{ fontWeight: 'bold', color: '#9CB24D' }}>${(59 + item * 10).toFixed(2)}</p>
-                </div>
-              </div>
-            </Link>
-          ))}
+      {isLoading ? (
+        <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+          <p>Loading products...</p>
         </div>
-        
-        {/* Right scroll button */}
-        <button 
-          onClick={scrollRight}
-          aria-label="Scroll right"
-          disabled={!canScrollRight}
-          style={{
-            position: 'absolute',
-            right: '-10px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            zIndex: 10,
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            backgroundColor: 'white',
-            border: 'none',
-            boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: canScrollRight ? 'pointer' : 'default',
-            opacity: canScrollRight ? 1 : 0.5,
-            transition: 'opacity 0.3s ease, transform 0.3s ease',
-          }}
-          onMouseDown={(e) => canScrollRight && (e.currentTarget.style.transform = 'translateY(-50%) scale(0.95)')}
-          onMouseUp={(e) => canScrollRight && (e.currentTarget.style.transform = 'translateY(-50%) scale(1)')}
-          onMouseLeave={(e) => canScrollRight && (e.currentTarget.style.transform = 'translateY(-50%) scale(1)')}
-        >
-          <span style={{ 
-            borderTop: '2px solid #9CB24D', 
-            borderRight: '2px solid #9CB24D', 
-            width: '10px', 
-            height: '10px', 
-            transform: 'rotate(45deg)', 
-            display: 'block', 
-            marginRight: '5px',
-            opacity: canScrollRight ? 1 : 0.5
-          }}></span>
-        </button>
-      </div>
+      ) : error ? (
+        <div style={{ textAlign: 'center', padding: '2rem 0', color: '#ef4444' }}>
+          <p>{error}</p>
+        </div>
+      ) : (
+        <div style={{ position: 'relative', padding: '0 40px' }}>
+          {/* Left scroll button */}
+          {products.length > 0 && (
+            <button 
+              onClick={scrollLeft}
+              aria-label="Scroll left"
+              disabled={!canScrollLeft}
+              style={{
+                position: 'absolute',
+                left: '-10px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 10,
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                backgroundColor: 'white',
+                border: 'none',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: canScrollLeft ? 'pointer' : 'default',
+                opacity: canScrollLeft ? 1 : 0.5,
+                transition: 'opacity 0.3s ease, transform 0.3s ease',
+              }}
+              onMouseDown={(e) => canScrollLeft && (e.currentTarget.style.transform = 'translateY(-50%) scale(0.95)')}
+              onMouseUp={(e) => canScrollLeft && (e.currentTarget.style.transform = 'translateY(-50%) scale(1)')}
+              onMouseLeave={(e) => canScrollLeft && (e.currentTarget.style.transform = 'translateY(-50%) scale(1)')}
+            >
+              <span style={{ 
+                borderTop: '2px solid #9CB24D', 
+                borderLeft: '2px solid #9CB24D', 
+                width: '10px', 
+                height: '10px', 
+                transform: 'rotate(-45deg)', 
+                display: 'block', 
+                marginLeft: '5px',
+                opacity: canScrollLeft ? 1 : 0.5
+              }}></span>
+            </button>
+          )}
+          
+          <div 
+            ref={scrollContainerRef}
+            className="featured-products"
+            style={{ 
+              display: 'flex',
+              overflowX: 'auto',
+              gap: '1.5rem',
+              paddingBottom: '0.75rem',
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#9CB24D #e5e7eb',
+              msOverflowStyle: 'none',
+              WebkitOverflowScrolling: 'touch',
+              scrollSnapType: 'x mandatory',
+              scrollBehavior: 'smooth',
+              width: '100%'
+            }}
+          >
+            {products.length > 0 ? (
+              products.map((product, index) => (
+                <Link 
+                  href={`/shop/product/${product.id}`} 
+                  key={product.id}
+                  style={{ 
+                    flex: '0 0 auto',
+                    width: '280px',
+                    textDecoration: 'none',
+                    color: 'inherit',
+                    scrollSnapAlign: 'start'
+                  }}
+                >
+                  <div style={{ 
+                    backgroundColor: 'white', 
+                    borderRadius: '0.5rem', 
+                    overflow: 'hidden', 
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-5px)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+                  }}
+                  >
+                    <div style={{ height: '300px', position: 'relative', backgroundColor: '#f3f4f6' }}>
+                      <Image
+                        src={imageErrors[product.id] 
+                          ? getFallbackImage(index)
+                          : getProductImageUrl(product)}
+                        alt={product.name}
+                        fill
+                        style={{ objectFit: 'cover' }}
+                        sizes="280px"
+                        onError={() => handleImageError(product.id)}
+                        priority={index < 2} // Prioritize loading the first two images
+                      />
+                    </div>
+                    <div style={{ padding: '1.5rem', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                      <h3 style={{ fontSize: '1.125rem', fontWeight: '500', marginBottom: '0.5rem' }}>
+                        {product.name}
+                      </h3>
+                      <p style={{ color: '#4b5563', marginBottom: '1rem', flexGrow: 1 }}>
+                        {getShortDescription(product)}
+                      </p>
+                      <p style={{ fontWeight: 'bold', color: '#9CB24D' }}>
+                        {formatPrice(product.price)}
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <div style={{ width: '100%', textAlign: 'center', padding: '2rem 0' }}>
+                <p>No products found.</p>
+              </div>
+            )}
+          </div>
+          
+          {/* Right scroll button */}
+          {products.length > 0 && (
+            <button 
+              onClick={scrollRight}
+              aria-label="Scroll right"
+              disabled={!canScrollRight}
+              style={{
+                position: 'absolute',
+                right: '-10px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 10,
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                backgroundColor: 'white',
+                border: 'none',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: canScrollRight ? 'pointer' : 'default',
+                opacity: canScrollRight ? 1 : 0.5,
+                transition: 'opacity 0.3s ease, transform 0.3s ease',
+              }}
+              onMouseDown={(e) => canScrollRight && (e.currentTarget.style.transform = 'translateY(-50%) scale(0.95)')}
+              onMouseUp={(e) => canScrollRight && (e.currentTarget.style.transform = 'translateY(-50%) scale(1)')}
+              onMouseLeave={(e) => canScrollRight && (e.currentTarget.style.transform = 'translateY(-50%) scale(1)')}
+            >
+              <span style={{ 
+                borderTop: '2px solid #9CB24D', 
+                borderRight: '2px solid #9CB24D', 
+                width: '10px', 
+                height: '10px', 
+                transform: 'rotate(45deg)', 
+                display: 'block', 
+                marginRight: '5px',
+                opacity: canScrollRight ? 1 : 0.5
+              }}></span>
+            </button>
+          )}
+        </div>
+      )}
       
       {/* Custom scrollbar styling */}
       <style jsx global>{`

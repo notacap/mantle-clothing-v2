@@ -1,0 +1,159 @@
+/**
+ * WooCommerce API service
+ * Handles fetching products and other data from the WooCommerce API via our internal API routes
+ */
+
+/**
+ * Fetch featured products from the internal API
+ * @param {number} limit - Number of products to fetch
+ * @returns {Promise<Object>} - Object with products array and isFeatured flag
+ */
+export async function getFeaturedProducts(limit = 8) {
+  try {
+    // Use our internal API route
+    const url = new URL('/api/products/featured', window.location.origin);
+    
+    // Add limit parameter
+    url.searchParams.append('limit', limit.toString());
+    
+    const response = await fetch(url.toString());
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch featured products: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data; // Returns { products: [...], isFeatured: boolean }
+  } catch (error) {
+    console.error('Error fetching featured products:', error);
+    return { products: [], isFeatured: false };
+  }
+}
+
+/**
+ * Fetch regular products from the internal API
+ * @param {number} limit - Number of products to fetch
+ * @returns {Promise<Array>} - Array of product objects
+ */
+export async function getProducts(limit = 8) {
+  try {
+    // Use our internal API route
+    const url = new URL('/api/products/all', window.location.origin);
+    
+    // Add limit parameter
+    url.searchParams.append('limit', limit.toString());
+    
+    const response = await fetch(url.toString());
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch products: ${response.status}`);
+    }
+    
+    const products = await response.json();
+    return products;
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    return [];
+  }
+}
+
+/**
+ * Fetch products by category from the internal API
+ * @param {number} categoryId - Category ID to fetch products for
+ * @param {number} limit - Number of products to fetch
+ * @returns {Promise<Array>} - Array of product objects
+ */
+export async function getProductsByCategory(categoryId, limit = 8) {
+  try {
+    // Use our internal API route
+    const url = new URL('/api/products/category', window.location.origin);
+    
+    // Add query parameters
+    url.searchParams.append('category', categoryId.toString());
+    url.searchParams.append('limit', limit.toString());
+    
+    const response = await fetch(url.toString());
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch products by category: ${response.status}`);
+    }
+    
+    const products = await response.json();
+    return products;
+  } catch (error) {
+    console.error('Error fetching products by category:', error);
+    return [];
+  }
+}
+
+/**
+ * Fetch a single product from the internal API
+ * @param {number} productId - Product ID to fetch
+ * @returns {Promise<Object>} - Product object
+ */
+export async function getProduct(productId) {
+  try {
+    // Use our internal API route
+    const url = new URL('/api/products', window.location.origin);
+    
+    // Add query parameters
+    url.searchParams.append('id', productId.toString());
+    
+    const response = await fetch(url.toString());
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch product: ${response.status}`);
+    }
+    
+    const product = await response.json();
+    return product;
+  } catch (error) {
+    console.error('Error fetching product:', error);
+    return null;
+  }
+}
+
+/**
+ * Format price with currency symbol
+ * @param {string} price - Price as string
+ * @param {string} currencySymbol - Currency symbol (default: $)
+ * @returns {string} - Formatted price
+ */
+export function formatPrice(price, currencySymbol = '$') {
+  if (!price) return `${currencySymbol}0.00`;
+  
+  // Convert to number and format with 2 decimal places
+  const numPrice = parseFloat(price);
+  return `${currencySymbol}${numPrice.toFixed(2)}`;
+}
+
+/**
+ * Extract the first image URL from a product
+ * @param {Object} product - Product object
+ * @returns {string} - Image URL
+ */
+export function getProductImageUrl(product) {
+  // Local fallback images
+  const fallbackImages = [
+    '/images/DSCF1858.jpg',
+    '/images/DSCF4564-scaled.jpg',
+    '/images/DSCF6361-scaled.jpg',
+    '/images/DSCF4744-scaled-e1608145214695.jpg'
+  ];
+  
+  // Random fallback image
+  const randomFallback = fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
+  
+  if (!product || !product.images || !product.images.length) {
+    return randomFallback;
+  }
+  
+  // Check if the image URL is from mantle-clothing.com
+  const imageUrl = product.images[0].src;
+  if (imageUrl && imageUrl.includes('mantle-clothing.com')) {
+    return imageUrl;
+  }
+  
+  // If the image URL is not from mantle-clothing.com, use a fallback
+  return randomFallback;
+} 
