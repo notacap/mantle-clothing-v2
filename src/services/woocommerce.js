@@ -3,6 +3,16 @@
  * Handles fetching products and other data from the WooCommerce API via our internal API routes
  */
 
+// Helper function to get base URL
+function getBaseUrl() {
+  // For server-side rendering, use environment variable or default to localhost
+  if (typeof window === 'undefined') {
+    return process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  }
+  // For client-side, use window.location.origin
+  return window.location.origin;
+}
+
 /**
  * Fetch featured products from the internal API
  * @param {number} limit - Number of products to fetch
@@ -11,7 +21,7 @@
 export async function getFeaturedProducts(limit = 8) {
   try {
     // Use our internal API route
-    const url = new URL('/api/products/featured', window.location.origin);
+    const url = new URL('/api/products/featured', getBaseUrl());
     
     // Add limit parameter
     url.searchParams.append('limit', limit.toString());
@@ -38,7 +48,7 @@ export async function getFeaturedProducts(limit = 8) {
 export async function getProducts(limit = 8) {
   try {
     // Use our internal API route
-    const url = new URL('/api/products/all', window.location.origin);
+    const url = new URL('/api/products/all', getBaseUrl());
     
     // Add limit parameter
     url.searchParams.append('limit', limit.toString());
@@ -66,7 +76,7 @@ export async function getProducts(limit = 8) {
 export async function getProductsByCategory(categoryId, limit = 8) {
   try {
     // Use our internal API route
-    const url = new URL('/api/products/category', window.location.origin);
+    const url = new URL('/api/products/category', getBaseUrl());
     
     // Add query parameters
     url.searchParams.append('category', categoryId.toString());
@@ -94,7 +104,7 @@ export async function getProductsByCategory(categoryId, limit = 8) {
 export async function getProduct(productId) {
   try {
     // Use our internal API route
-    const url = new URL('/api/products', window.location.origin);
+    const url = new URL('/api/products', getBaseUrl());
     
     // Add query parameters
     url.searchParams.append('id', productId.toString());
@@ -194,7 +204,7 @@ export function getProductSecondaryImageUrl(product) {
 export async function getProductsByTag(tag, limit = 8) {
   try {
     // Use our internal API route
-    const url = new URL('/api/products/tag', window.location.origin);
+    const url = new URL('/api/products/tag', getBaseUrl());
     
     // Add query parameters
     url.searchParams.append('tag', tag);
